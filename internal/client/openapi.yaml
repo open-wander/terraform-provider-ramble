@@ -1,0 +1,1754 @@
+components:
+    schemas:
+        handlers.APIErrorBody:
+            properties:
+                code:
+                    example: not_found
+                    type: string
+                message:
+                    example: pack not found
+                    type: string
+            type: object
+        handlers.APIErrorResponse:
+            properties:
+                error:
+                    $ref: '#/components/schemas/handlers.APIErrorBody'
+            type: object
+        handlers.CreateOrgRequest:
+            properties:
+                description:
+                    example: Our packs and jobs
+                    type: string
+                name:
+                    example: myorg
+                    type: string
+            required:
+                - name
+            type: object
+        handlers.CreateResourceRequest:
+            properties:
+                description:
+                    example: MySQL on Nomad
+                    type: string
+                file_path:
+                    example: packs/mysql
+                    type: string
+                license:
+                    example: MIT
+                    type: string
+                name:
+                    example: mysql
+                    type: string
+                namespace:
+                    example: alice
+                    type: string
+                repository_url:
+                    example: https://github.com/alice/packs
+                    type: string
+                tags:
+                    example:
+                        - database
+                        - sql
+                    items:
+                        type: string
+                    type: array
+                type:
+                    enum:
+                        - pack
+                        - job
+                    example: pack
+                    type: string
+                version:
+                    example: v1.0.0
+                    type: string
+            required:
+                - name
+                - namespace
+                - repository_url
+                - type
+                - version
+            type: object
+        handlers.CreateResourceResponse:
+            properties:
+                created_at:
+                    format: date-time
+                    type: string
+                description:
+                    example: MySQL on Nomad
+                    type: string
+                file_path:
+                    example: packs/mysql
+                    type: string
+                id:
+                    example: 42
+                    type: integer
+                latest_version:
+                    example: v1.0.0
+                    type: string
+                license:
+                    example: MIT
+                    type: string
+                name:
+                    example: mysql
+                    type: string
+                namespace:
+                    example: alice
+                    type: string
+                repository_url:
+                    example: https://github.com/alice/packs
+                    type: string
+                tags:
+                    example:
+                        - database
+                        - sql
+                    items:
+                        type: string
+                    type: array
+                type:
+                    enum:
+                        - pack
+                        - job
+                    example: pack
+                    type: string
+                updated_at:
+                    format: date-time
+                    type: string
+                webhook_secret:
+                    type: string
+                webhook_url:
+                    example: https://ramble.openwander.org/resource/42/webhook
+                    type: string
+            required:
+                - created_at
+                - description
+                - file_path
+                - id
+                - latest_version
+                - license
+                - name
+                - namespace
+                - repository_url
+                - tags
+                - type
+                - updated_at
+                - webhook_secret
+                - webhook_url
+            type: object
+        handlers.CreateVersionRequest:
+            properties:
+                version:
+                    example: v1.1.0
+                    type: string
+            required:
+                - version
+            type: object
+        handlers.CurrentUserResponse:
+            properties:
+                token_expires_at:
+                    format: date-time
+                    type: string
+                token_org:
+                    example: acme
+                    nullable: true
+                    type: string
+                token_scope:
+                    enum:
+                        - read
+                        - write
+                    type: string
+                username:
+                    example: alice
+                    type: string
+            required:
+                - token_expires_at
+                - token_org
+                - token_scope
+                - username
+            type: object
+        handlers.JobDetail:
+            properties:
+                description:
+                    type: string
+                name:
+                    type: string
+                versions:
+                    description: Reuse PackVersion structure
+                    items:
+                        $ref: '#/components/schemas/handlers.PackVersion'
+                    type: array
+            type: object
+        handlers.JobSummary:
+            properties:
+                description:
+                    type: string
+                name:
+                    type: string
+                namespace:
+                    type: string
+            type: object
+        handlers.OrgMemberResponse:
+            properties:
+                role:
+                    enum:
+                        - owner
+                        - member
+                    example: owner
+                    type: string
+                username:
+                    example: alice
+                    type: string
+            required:
+                - role
+                - username
+            type: object
+        handlers.OrgResponse:
+            properties:
+                created_at:
+                    format: date-time
+                    type: string
+                description:
+                    example: Our packs and jobs
+                    type: string
+                member_count:
+                    example: 3
+                    type: integer
+                name:
+                    example: myorg
+                    type: string
+            required:
+                - created_at
+                - description
+                - member_count
+                - name
+            type: object
+        handlers.PackDetail:
+            properties:
+                description:
+                    type: string
+                name:
+                    type: string
+                versions:
+                    items:
+                        $ref: '#/components/schemas/handlers.PackVersion'
+                    type: array
+            type: object
+        handlers.PackSummary:
+            properties:
+                description:
+                    type: string
+                name:
+                    type: string
+                namespace:
+                    type: string
+            type: object
+        handlers.PackVersion:
+            properties:
+                url:
+                    type: string
+                version:
+                    type: string
+            type: object
+        handlers.PutOrgMemberRequest:
+            properties:
+                role:
+                    enum:
+                        - owner
+                        - member
+                    example: member
+                    type: string
+            required:
+                - role
+            type: object
+        handlers.RecentResource:
+            properties:
+                description:
+                    type: string
+                id:
+                    type: integer
+                latest_version:
+                    type: string
+                name:
+                    type: string
+                namespace:
+                    type: string
+                tags:
+                    items:
+                        type: string
+                    type: array
+                type:
+                    type: string
+                updated_at:
+                    type: string
+                url:
+                    type: string
+            type: object
+        handlers.ResourceResponse:
+            properties:
+                created_at:
+                    format: date-time
+                    type: string
+                description:
+                    example: MySQL on Nomad
+                    type: string
+                file_path:
+                    example: packs/mysql
+                    type: string
+                id:
+                    example: 42
+                    type: integer
+                latest_version:
+                    example: v1.0.0
+                    type: string
+                license:
+                    example: MIT
+                    type: string
+                name:
+                    example: mysql
+                    type: string
+                namespace:
+                    example: alice
+                    type: string
+                repository_url:
+                    example: https://github.com/alice/packs
+                    type: string
+                tags:
+                    example:
+                        - database
+                        - sql
+                    items:
+                        type: string
+                    type: array
+                type:
+                    enum:
+                        - pack
+                        - job
+                    example: pack
+                    type: string
+                updated_at:
+                    format: date-time
+                    type: string
+                webhook_url:
+                    example: https://ramble.openwander.org/resource/42/webhook
+                    type: string
+            required:
+                - created_at
+                - description
+                - file_path
+                - id
+                - latest_version
+                - license
+                - name
+                - namespace
+                - repository_url
+                - tags
+                - type
+                - updated_at
+                - webhook_url
+            type: object
+        handlers.ResourceVersionResponse:
+            properties:
+                created_at:
+                    format: date-time
+                    type: string
+                fetch_error:
+                    type: string
+                fetch_status:
+                    enum:
+                        - pending
+                        - fetching
+                        - completed
+                        - failed
+                    type: string
+                version:
+                    example: v1.1.0
+                    type: string
+            required:
+                - created_at
+                - fetch_error
+                - fetch_status
+                - version
+            type: object
+        handlers.UpdateOrgRequest:
+            properties:
+                description:
+                    example: Our packs and jobs
+                    type: string
+            type: object
+        handlers.UpdateResourceRequest:
+            properties:
+                description:
+                    example: MySQL on Nomad
+                    type: string
+                file_path:
+                    example: packs/mysql
+                    type: string
+                license:
+                    example: MIT
+                    type: string
+                repository_url:
+                    example: https://github.com/alice/packs
+                    type: string
+                tags:
+                    example:
+                        - database
+                        - sql
+                    items:
+                        type: string
+                    type: array
+            type: object
+        handlers.WebhookSecretResponse:
+            properties:
+                webhook_secret:
+                    type: string
+            required:
+                - webhook_secret
+            type: object
+    securitySchemes:
+        bearerAuth:
+            bearerFormat: token
+            description: 'Ramble API token, sent as the Authorization header: Bearer <token>'
+            scheme: bearer
+            type: http
+info:
+    contact:
+        name: API Support
+    description: This is the API documentation for the RMBL Nomad Job & Pack Registry.
+    license:
+        name: MPL-2.0
+    title: RMBL Nomad Registry API
+    version: "1.0"
+openapi: 3.0.3
+paths:
+    /{username}/v1/jobs/{jobname}:
+        get:
+            description: Fetch detailed metadata and version history for a specific Nomad Job.
+            operationId: getNamespaceJob
+            parameters:
+                - description: Namespace (user or org)
+                  in: path
+                  name: username
+                  required: true
+                  schema:
+                    type: string
+                - description: Job name
+                  in: path
+                  name: jobname
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.JobDetail'
+                    description: OK
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Not Found
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Internal Server Error
+            summary: Get job details
+            tags:
+                - nomad-job
+    /{username}/v1/packs:
+        get:
+            description: Fetch a list of all Nomad Packs within a specific user or organization namespace.
+            operationId: listNamespacePacks
+            parameters:
+                - description: Namespace (user or org)
+                  in: path
+                  name: username
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    items:
+                                        $ref: '#/components/schemas/handlers.PackSummary'
+                                    type: array
+                                type: object
+                    description: OK
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Not Found
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Internal Server Error
+            summary: List packs in a namespace
+            tags:
+                - nomad-pack
+    /{username}/v1/packs/{packname}:
+        get:
+            description: Fetch detailed metadata and version history for a specific Nomad Pack.
+            operationId: getNamespacePack
+            parameters:
+                - description: Namespace (user or org)
+                  in: path
+                  name: username
+                  required: true
+                  schema:
+                    type: string
+                - description: Pack name
+                  in: path
+                  name: packname
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.PackDetail'
+                    description: OK
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Not Found
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Internal Server Error
+            summary: Get pack details
+            tags:
+                - nomad-pack
+    /v1/jobs:
+        get:
+            description: Fetch a list of all Nomad Jobs available in the registry across all namespaces.
+            operationId: listJobs
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    items:
+                                        $ref: '#/components/schemas/handlers.JobSummary'
+                                    type: array
+                                type: object
+                    description: OK
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Internal Server Error
+            summary: List all jobs
+            tags:
+                - nomad-job
+    /v1/jobs/search:
+        get:
+            description: Search for Nomad Jobs across all namespaces by name or description.
+            operationId: searchJobs
+            parameters:
+                - description: Search query
+                  in: query
+                  name: q
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    items:
+                                        $ref: '#/components/schemas/handlers.JobSummary'
+                                    type: array
+                                type: object
+                    description: OK
+                "429":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Too Many Requests
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Internal Server Error
+            summary: Search jobs
+            tags:
+                - nomad-job
+    /v1/namespaces/{namespace}/resources/{name}:
+        get:
+            description: Fetch a pack or job by its namespace (a username or an organization name) and name, both case-insensitive. Needs a read token. The namespace/name pair is the import ID of the Terraform provider.
+            operationId: getResourceByName
+            parameters:
+                - description: Username or organization name
+                  in: path
+                  name: namespace
+                  required: true
+                  schema:
+                    type: string
+                - description: Resource name
+                  in: path
+                  name: name
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.ResourceResponse'
+                    description: OK
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Unauthorized
+                "403":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Forbidden
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Not Found
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: Get a resource by namespace and name
+            tags:
+                - resources
+    /v1/orgs:
+        post:
+            description: Create an organization; the caller becomes its owner. The name is 1-64 characters of letters, digits, dot, dash or underscore, starts with a letter or digit, is unique ignoring case and must not clash with a username or a reserved name. A token restricted to one organization cannot create organizations. Needs a write token.
+            operationId: createOrg
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/handlers.CreateOrgRequest'
+                description: Organization
+                required: true
+                x-originalParamName: body
+            responses:
+                "201":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.OrgResponse'
+                    description: Created
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Bad Request
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Unauthorized
+                "403":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Forbidden
+                "409":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Conflict
+                "422":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: invalid_name
+                "429":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Too Many Requests
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: Create an organization
+            tags:
+                - orgs
+    /v1/orgs/{name}:
+        delete:
+            description: Delete an organization and its memberships. Only an owner may delete, and only when the organization has no live resources; otherwise the answer is 409 org_not_empty with the count in the message. The name becomes free for reuse. Audited as org.delete. Needs a write token.
+            operationId: deleteOrg
+            parameters:
+                - description: Organization name
+                  in: path
+                  name: name
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "204":
+                    description: Deleted
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Unauthorized
+                "403":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Forbidden
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Not Found
+                "409":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: org_not_empty
+                "429":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Too Many Requests
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: Delete an organization
+            tags:
+                - orgs
+        get:
+            description: Fetch an organization by name, ignoring case. Name, description and member count are public, so any authenticated token may read any organization; a token restricted to one organization may read only that one. Needs a read token.
+            operationId: getOrg
+            parameters:
+                - description: Organization name
+                  in: path
+                  name: name
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.OrgResponse'
+                    description: OK
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Unauthorized
+                "403":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Forbidden
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Not Found
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: Get an organization
+            tags:
+                - orgs
+        patch:
+            description: Change the description of an organization. An omitted or null description stays unchanged and an empty string clears it. The name cannot be changed and is answered with 422 immutable_field. Only an owner may update; a change is audited as org.update, an empty or all-null body writes nothing. Needs a write token.
+            operationId: updateOrg
+            parameters:
+                - description: Organization name
+                  in: path
+                  name: name
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/handlers.UpdateOrgRequest'
+                description: Fields to change
+                required: true
+                x-originalParamName: body
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.OrgResponse'
+                    description: OK
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Bad Request
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Unauthorized
+                "403":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Forbidden
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Not Found
+                "422":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: immutable_field
+                "429":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Too Many Requests
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: Update an organization
+            tags:
+                - orgs
+    /v1/orgs/{name}/members:
+        get:
+            description: List the live members of an organization as a JSON array of username and role, ordered by username ignoring case. Only a member of the organization may list its members; anyone else gets 403. Needs a read token.
+            operationId: listOrgMembers
+            parameters:
+                - description: Organization name
+                  in: path
+                  name: name
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                items:
+                                    $ref: '#/components/schemas/handlers.OrgMemberResponse'
+                                type: array
+                    description: OK
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Unauthorized
+                "403":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Forbidden
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Not Found
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: List the members of an organization
+            tags:
+                - orgs
+    /v1/orgs/{name}/members/{username}:
+        delete:
+            description: Remove a member. Only an owner may call this. Removing the last owner is answered with 409 last_owner. An unknown user, or a user who is not a member, is 404 (the web form ignores that case). Audited as org.remove_member. Needs a write token.
+            operationId: removeOrgMember
+            parameters:
+                - description: Organization name
+                  in: path
+                  name: name
+                  required: true
+                  schema:
+                    type: string
+                - description: Username
+                  in: path
+                  name: username
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "204":
+                    description: Removed
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Unauthorized
+                "403":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Forbidden
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Not Found
+                "409":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: last_owner
+                "429":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Too Many Requests
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: Remove a member from an organization
+            tags:
+                - orgs
+        put:
+            description: 'Set the role of a user in an organization: the user is added when not a member (a removed membership is restored) and the role is changed when already a member. The role must be owner or member, otherwise 422 invalid_role. Only an owner may call this. Demoting the last owner is answered with 409 last_owner. An unknown username is 404. Setting the role a member already has changes nothing. Audited as org.add_member or org.change_member_role. Needs a write token.'
+            operationId: putOrgMember
+            parameters:
+                - description: Organization name
+                  in: path
+                  name: name
+                  required: true
+                  schema:
+                    type: string
+                - description: Username
+                  in: path
+                  name: username
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/handlers.PutOrgMemberRequest'
+                description: Role
+                required: true
+                x-originalParamName: body
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.OrgMemberResponse'
+                    description: OK
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Bad Request
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Unauthorized
+                "403":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Forbidden
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Not Found
+                "409":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: last_owner
+                "422":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: invalid_role
+                "429":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Too Many Requests
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: Add a member or change a member's role
+            tags:
+                - orgs
+    /v1/packs:
+        get:
+            description: Fetch a list of all Nomad Packs available in the registry across all namespaces.
+            operationId: listPacks
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    items:
+                                        $ref: '#/components/schemas/handlers.PackSummary'
+                                    type: array
+                                type: object
+                    description: OK
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Internal Server Error
+            summary: List all packs
+            tags:
+                - nomad-pack
+    /v1/packs/search:
+        get:
+            description: Search for Nomad Packs across all namespaces by name or description.
+            operationId: searchPacks
+            parameters:
+                - description: Search query
+                  in: query
+                  name: q
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    items:
+                                        $ref: '#/components/schemas/handlers.PackSummary'
+                                    type: array
+                                type: object
+                    description: OK
+                "429":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Too Many Requests
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Internal Server Error
+            summary: Search packs
+            tags:
+                - nomad-pack
+    /v1/recent:
+        get:
+            description: Fetch a list of recently updated packs and jobs, optionally filtered by time.
+            operationId: listRecent
+            parameters:
+                - description: ISO8601 timestamp to filter resources updated after this time
+                  in: query
+                  name: since
+                  schema:
+                    type: string
+                - description: Maximum number of results (default 50, max 100)
+                  in: query
+                  name: limit
+                  schema:
+                    type: integer
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    items:
+                                        $ref: '#/components/schemas/handlers.RecentResource'
+                                    type: array
+                                type: object
+                    description: OK
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Internal Server Error
+            summary: List recently updated resources
+            tags:
+                - resources
+    /v1/registries:
+        get:
+            description: Returns a JSON list of all namespaces that contain at least one Nomad Pack.
+            operationId: listRegistries
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    items:
+                                        type: string
+                                    type: array
+                                type: object
+                    description: OK
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Internal Server Error
+            summary: List all registry namespaces (JSON)
+            tags:
+                - nomad-pack
+    /v1/registries/search:
+        get:
+            description: Search for namespaces (users/orgs) that have published Nomad Packs.
+            operationId: searchRegistries
+            parameters:
+                - description: Search query
+                  in: query
+                  name: q
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties:
+                                    items:
+                                        type: string
+                                    type: array
+                                type: object
+                    description: OK
+                "429":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Too Many Requests
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Internal Server Error
+            summary: Search registry namespaces
+            tags:
+                - nomad-pack
+    /v1/resources:
+        post:
+            description: Create a pack or job in the caller's personal namespace or in an organization the caller belongs to. Needs a write token. The response is the only one that includes webhook_secret.
+            operationId: createResource
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/handlers.CreateResourceRequest'
+                description: Resource
+                required: true
+                x-originalParamName: body
+            responses:
+                "201":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.CreateResourceResponse'
+                    description: Created
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Bad Request
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Unauthorized
+                "403":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Forbidden
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Not Found
+                "409":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Conflict
+                "422":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: invalid_name, invalid_type, invalid_repository_url, invalid_version or invalid_tags
+                "429":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Too Many Requests
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: Create a resource
+            tags:
+                - resources
+    /v1/resources/{id}:
+        delete:
+            description: 'Delete a pack or job. Only the owner may delete: the owning user of a personal resource or an owner of the organization. The resource is gone afterwards: reads answer 404. Needs a write token.'
+            operationId: deleteResource
+            parameters:
+                - description: Resource ID
+                  in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: integer
+            responses:
+                "204":
+                    description: No Content
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Unauthorized
+                "403":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Forbidden
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Not Found
+                "429":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Too Many Requests
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: Delete a resource
+            tags:
+                - resources
+        get:
+            description: Fetch a pack or job by its numeric ID. Needs a read token. The response never includes webhook_secret.
+            operationId: getResource
+            parameters:
+                - description: Resource ID
+                  in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: integer
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.ResourceResponse'
+                    description: OK
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Unauthorized
+                "403":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Forbidden
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Not Found
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: Get a resource by ID
+            tags:
+                - resources
+        patch:
+            description: Change description, repository_url, file_path, license or tags of a pack or job. Omitted and null fields stay unchanged; an empty string clears description and file_path, an empty license becomes "Unknown" and an empty tags list removes all tags. Tags must be lowercase, 2-20 characters of a-z, 0-9 and dash, without duplicates; anything else is answered with 422 invalid_tags. name, type and namespace cannot be changed and are answered with 422 immutable_field. Organization members may edit. Needs a write token.
+            operationId: updateResource
+            parameters:
+                - description: Resource ID
+                  in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: integer
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/handlers.UpdateResourceRequest'
+                description: Fields to change
+                required: true
+                x-originalParamName: body
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.ResourceResponse'
+                    description: OK
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Bad Request
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Unauthorized
+                "403":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Forbidden
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Not Found
+                "422":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: immutable_field, invalid_repository_url or invalid_tags
+                "429":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Too Many Requests
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: Update a resource
+            tags:
+                - resources
+    /v1/resources/{id}/versions:
+        get:
+            description: List the versions of a pack or job, newest first, with the state of each background content fetch. Needs a read token.
+            operationId: listResourceVersions
+            parameters:
+                - description: Resource ID
+                  in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: integer
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                items:
+                                    $ref: '#/components/schemas/handlers.ResourceVersionResponse'
+                                type: array
+                    description: OK
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Unauthorized
+                "403":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Forbidden
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Not Found
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: List the versions of a resource
+            tags:
+                - resources
+        post:
+            description: Add a version to a pack or job. The version is created with fetch_status pending and its content is fetched from the repository in the background. Version must be 1-64 characters. Organization members may add versions. Needs a write token.
+            operationId: createResourceVersion
+            parameters:
+                - description: Resource ID
+                  in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: integer
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/handlers.CreateVersionRequest'
+                description: Version
+                required: true
+                x-originalParamName: body
+            responses:
+                "202":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.ResourceVersionResponse'
+                    description: Accepted
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Bad Request
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Unauthorized
+                "403":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Forbidden
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Not Found
+                "409":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Conflict
+                "422":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: invalid_version
+                "429":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Too Many Requests
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: Add a version to a resource
+            tags:
+                - resources
+    /v1/resources/{id}/versions/{version}/retry:
+        post:
+            description: Fetch the content of a failed version again. The version is reset to pending and fetched in the background. A version that is not failed answers 409. Organization members may retry. Needs a write token.
+            operationId: retryResourceVersion
+            parameters:
+                - description: Resource ID
+                  in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: integer
+                - description: Version, URL-encoded
+                  in: path
+                  name: version
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "202":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.ResourceVersionResponse'
+                    description: Accepted
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Unauthorized
+                "403":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Forbidden
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Not Found
+                "409":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Conflict
+                "429":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Too Many Requests
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: Retry the fetch of a version
+            tags:
+                - resources
+    /v1/resources/{id}/webhook-secret:
+        post:
+            description: Replace the webhook secret of a pack or job. The new secret is returned in this response only; the old one stops working at once. Organization members may rotate. Needs a write token.
+            operationId: rotateWebhookSecret
+            parameters:
+                - description: Resource ID
+                  in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: integer
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.WebhookSecretResponse'
+                    description: OK
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Unauthorized
+                "403":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Forbidden
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Not Found
+                "429":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Too Many Requests
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: Rotate the webhook secret
+            tags:
+                - resources
+    /v1/user:
+        get:
+            description: Identify the user a Bearer token belongs to and describe the token. Use it to check credentials.
+            operationId: getCurrentUser
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.CurrentUserResponse'
+                    description: OK
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Unauthorized
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/handlers.APIErrorResponse'
+                    description: Internal Server Error
+            security:
+                - bearerAuth: []
+            summary: Current user and token
+            tags:
+                - user
+servers:
+    - url: https://ramble.openwander.org/
