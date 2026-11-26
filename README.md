@@ -6,9 +6,14 @@ It is built on the [Terraform Plugin Framework](https://github.com/hashicorp/ter
 
 ## What it manages
 
-The provider is under construction. The skeleton configures a client and nothing more. Planned:
+The provider is under construction.
 
-- `ramble_resource`: a pack or job published to the registry
+Available:
+
+- `ramble_resource` (resource and data source): a pack or job published to the registry. Import with `terraform import ramble_resource.x namespace/name`.
+
+Planned:
+
 - `ramble_organization`: an organisation
 - `ramble_organization_member`: a user's membership of an organisation
 
