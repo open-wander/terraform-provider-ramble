@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Start or stop the local acceptance-test environment: Postgres in Docker and
-# a Ramble server built from a source checkout, plus a seeded test user and
-# write-scope API token.
+# a Ramble server built from a source checkout, plus a seeded test user with a
+# write-scope API token and a second user (RAMBLE_TEST_MEMBER) without one.
 #
 #   scripts/testacc-env.sh up     start everything, write .testacc.env
 #   scripts/testacc-env.sh down   stop and remove everything

@@ -81,3 +81,47 @@ func TestVersionValidator(t *testing.T) {
 		})
 	}
 }
+
+func TestOrgNameValidator(t *testing.T) {
+	tests := []struct {
+		name string
+		want string // substring of the error; empty means valid
+	}{
+		{"myorg", ""},
+		{"MyOrg", ""},
+		{"a", ""},
+		{"0abc", ""},
+		{"with-dash_and.dot", ""},
+		{strings.Repeat("a", 64), ""},
+		{strings.Repeat("a", 65), "Invalid organisation name"},
+		{"", "Invalid organisation name"},
+		{".hidden", "Invalid organisation name"},
+		{"-dash", "Invalid organisation name"},
+		{"_under", "Invalid organisation name"},
+		{"has space", "Invalid organisation name"},
+		{" padded", "Invalid organisation name"},
+		{"a/b", "Invalid organisation name"},
+		{"café", "Invalid organisation name"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := runStringValidator(t, orgNameValidator{}, tt.name)
+			if tt.want == "" && got != "" {
+				t.Fatalf("unexpected error: %s", got)
+			}
+			if tt.want != "" && !strings.Contains(got, tt.want) {
+				t.Fatalf("error %q does not contain %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestOrgNameValidatorIgnoresUnknownAndNull(t *testing.T) {
+	for _, v := range []types.String{types.StringNull(), types.StringUnknown()} {
+		resp := &validator.StringResponse{}
+		orgNameValidator{}.ValidateString(context.Background(), validator.StringRequest{Path: path.Root("x"), ConfigValue: v}, resp)
+		if resp.Diagnostics.HasError() {
+			t.Fatalf("%v: %v", v, resp.Diagnostics)
+		}
+	}
+}

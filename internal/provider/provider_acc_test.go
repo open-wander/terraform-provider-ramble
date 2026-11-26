@@ -22,6 +22,16 @@ func testAccPreCheck(t *testing.T) {
 	}
 }
 
+// testAccPreCheckMember also requires the second seeded user, for tests that
+// add a member other than the token's owner.
+func testAccPreCheckMember(t *testing.T) {
+	t.Helper()
+	testAccPreCheck(t)
+	if os.Getenv("RAMBLE_TEST_MEMBER") == "" {
+		t.Fatal("RAMBLE_TEST_MEMBER must be set for organisation member tests (see 'make testacc-env-up')")
+	}
+}
+
 // TestAccProvider_environment proves the acceptance environment end to end:
 // the seeded token authenticates against the running Ramble and carries write
 // scope. A provider block with no resources may never be configured by

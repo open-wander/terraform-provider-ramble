@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -187,7 +188,12 @@ func (r *ResourceResource) Create(ctx context.Context, req resource.CreateReques
 		return
 	}
 	if res.StatusCode() != http.StatusCreated || res.JSON201 == nil {
-		resp.Diagnostics.Append(apiErrorDiag("Unable to create the resource", res.StatusCode(), res.Body))
+		d := apiErrorDiag("Unable to create the resource", res.StatusCode(), res.Body)
+		if res.StatusCode() == http.StatusConflict {
+			d = diag.NewErrorDiagnostic(d.Summary(), d.Detail()+
+				"\n\nTo manage an existing resource, import it with: terraform import ramble_resource.example namespace/name")
+		}
+		resp.Diagnostics.Append(d)
 		return
 	}
 
