@@ -1,82 +1,208 @@
-# Terraform Provider testing workflow.
+# Provider tests: build and lint, generated-code drift, unit tests, and
+# acceptance tests against a Ramble server built from source.
 name: Tests
 
-# This GitHub action runs your tests for each pull request and push.
-# Optionally, you can turn it on using a schedule for regular testing.
 on:
   pull_request:
-    paths-ignore:
-      - 'README.md'
   push:
-    paths-ignore:
-      - 'README.md'
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      ramble_ref:
+        description: 'Ref of open-wander/ramble to test against'
+        required: false
+        default: 'main'
+        type: string
 
 # Testing only needs permissions to read the repository contents.
 permissions:
   contents: read
 
+# The job names below ("build", "generate", "unit", "acceptance") are required
+# status checks; see .github/rulesets/main.json. Rename them only together
+# with that file.
 jobs:
-  # Ensure project builds before running testing matrix
   build:
-    name: Build
+    name: build
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
         with:
           go-version-file: 'go.mod'
           cache: true
       - run: go mod download
-      - run: go build -v .
+      - run: go build -v ./...
       - name: Run linters
         uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
         with:
-          version: latest
+          # Pinned: build is a required check, so a new linter release must not
+          # turn it red without a code change. Bump deliberately.
+          version: v2.15.0
 
   generate:
+    name: generate
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
         with:
           go-version-file: 'go.mod'
           cache: true
-      # We need the latest version of Terraform for our documentation generation to use
+      # Documentation generation needs a Terraform binary.
       - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
         with:
           terraform_wrapper: false
       - run: make generate
-      - name: git diff
+      - name: Check for drift
         run: |
-          git diff --compact-summary --exit-code || \
-            (echo; echo "Unexpected difference in directories after code generation. Run 'make generate' command and commit."; exit 1)
+          if [ -n "$(git status --porcelain)" ]; then
+            git status --short
+            git diff --compact-summary
+            echo
+            echo "Unexpected difference after code generation. Run 'make generate' and commit."
+            exit 1
+          fi
 
-  # Run acceptance tests in a matrix with Terraform CLI versions
-  test:
-    name: 'Acceptance Tests: Terraform ${{ matrix.terraform }}'
-    needs: build
+  unit:
+    name: unit
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        # Terraform versions
-        terraform:
-          - '1.13.*'
-          - '1.14.*'
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
         with:
           go-version-file: 'go.mod'
           cache: true
-      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+      - run: go test -cover ./...
+
+  # One acceptance run per Terraform or OpenTofu version, each against its own
+  # Ramble server and database.
+  acceptance-matrix:
+    name: 'acceptance (${{ matrix.tool }} ${{ matrix.version }})'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - tool: terraform
+            version: '1.16.*'
+          - tool: terraform
+            version: '1.17.*'
+          - tool: opentofu
+            version: 'latest'
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_PASSWORD: tfacc
+          POSTGRES_DB: rmbl
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d rmbl"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      # A throwaway password for a service container that exists only for this job.
+      DATABASE_URL: postgres://postgres:tfacc@127.0.0.1:5432/rmbl?sslmode=disable
+      RAMBLE_PORT: '3999'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          terraform_version: ${{ matrix.terraform }}
+          persist-credentials: false
+      - name: Check out Ramble
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: open-wander/ramble
+          ref: ${{ inputs.ramble_ref || 'main' }}
+          path: ramble
+          persist-credentials: false
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+          cache-dependency-path: |
+            go.sum
+            ramble/go.sum
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        if: matrix.tool == 'terraform'
+        with:
+          terraform_version: ${{ matrix.version }}
           terraform_wrapper: false
+      - uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2.0.2
+        if: matrix.tool == 'opentofu'
+        with:
+          tofu_version: ${{ matrix.version }}
+          tofu_wrapper: false
+      - name: Point the acceptance tests at OpenTofu
+        if: matrix.tool == 'opentofu'
+        run: |
+          echo "TF_ACC_TERRAFORM_PATH=$(command -v tofu)" >> "$GITHUB_ENV"
+          echo "TF_ACC_PROVIDER_HOST=registry.opentofu.org" >> "$GITHUB_ENV"
       - run: go mod download
-      - env:
-          TF_ACC: "1"
-        run: go test -v -cover ./internal/provider/
-        timeout-minutes: 10
+      - name: Build and start Ramble
+        run: |
+          mkdir -p "$RUNNER_TEMP/ramble-run"
+          (cd ramble && go build -o "$RUNNER_TEMP/ramble-run/ramble" ./cmd/ramble)
+          # Ramble loads ./views and ./public relative to its working directory.
+          cd ramble
+          SESSION_SECRET=tfacc-session-secret-not-for-production \
+          BASE_URL="http://127.0.0.1:$RAMBLE_PORT" \
+            nohup "$RUNNER_TEMP/ramble-run/ramble" server --port "$RAMBLE_PORT" \
+            >"$RUNNER_TEMP/ramble-run/ramble.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/ramble-run/ramble.pid"
+      - name: Wait for Ramble
+        run: |
+          # Ramble migrates the schema on start; /v1/packs is public.
+          for _ in $(seq 1 90); do
+            if curl -fsS -o /dev/null "http://127.0.0.1:$RAMBLE_PORT/v1/packs"; then exit 0; fi
+            kill -0 "$(cat "$RUNNER_TEMP/ramble-run/ramble.pid")" || break
+            sleep 1
+          done
+          echo "Ramble did not become ready"
+          exit 1
+      - name: Seed the test user and token
+        env:
+          RAMBLE_ADDR: http://127.0.0.1:${{ env.RAMBLE_PORT }}
+        run: |
+          go run ./scripts/seed -out "$RUNNER_TEMP/testacc.env"
+          . "$RUNNER_TEMP/testacc.env"
+          echo "::add-mask::$RAMBLE_TOKEN"
+          {
+            echo "RAMBLE_ADDR=$RAMBLE_ADDR"
+            echo "RAMBLE_TOKEN=$RAMBLE_TOKEN"
+          } >> "$GITHUB_ENV"
+      - name: Acceptance tests
+        run: make testacc
+      - name: Ramble log
+        if: failure()
+        run: tail -n 100 "$RUNNER_TEMP/ramble-run/ramble.log" || true
+
+  # The single required check for the matrix above: matrix job names change
+  # whenever a version is bumped, this one does not.
+  acceptance:
+    name: acceptance
+    needs: acceptance-matrix
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check the matrix result
+        env:
+          RESULT: ${{ needs.acceptance-matrix.result }}
+        run: |
+          echo "acceptance matrix: $RESULT"
+          [ "$RESULT" = "success" ]
