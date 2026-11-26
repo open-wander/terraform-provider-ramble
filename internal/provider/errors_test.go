@@ -32,8 +32,30 @@ func TestAPIErrorDiag(t *testing.T) {
 		},
 		{
 			name: "409 hint", status: 409,
-			body: `{"error":{"code":"conflict","message":"exists"}}`,
-			want: []string{"terraform import ramble_resource.example namespace/name"},
+			body:    `{"error":{"code":"conflict","message":"exists"}}`,
+			want:    []string{"already exists or is in a conflicting state"},
+			wantNot: []string{"ramble_resource"},
+		},
+		{
+			name: "org_not_empty hint", status: 409,
+			body: `{"error":{"code":"org_not_empty","message":"organization still has 3 resources"}}`,
+			want: []string{"organization still has 3 resources", "Delete or move", "ramble_resource.namespace = ramble_organization"},
+		},
+		{
+			name: "last_owner hint", status: 409,
+			body:    `{"error":{"code":"last_owner","message":"cannot remove the last owner"}}`,
+			want:    []string{"must always keep an owner", "make another member owner first"},
+			wantNot: []string{"terraform import"},
+		},
+		{
+			name: "invalid_role hint", status: 422,
+			body: `{"error":{"code":"invalid_role","message":"role must be owner or member"}}`,
+			want: []string{"owner", "member", "role"},
+		},
+		{
+			name: "invalid_name hint", status: 422,
+			body: `{"error":{"code":"invalid_name","message":"organization name is reserved"}}`,
+			want: []string{"1-64", "reserved"},
 		},
 		{
 			name: "429 hint", status: 429,

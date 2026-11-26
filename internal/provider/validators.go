@@ -70,3 +70,27 @@ func (versionValidator) ValidateString(_ context.Context, req validator.StringRe
 			"The version must not have leading or trailing whitespace.")
 	}
 }
+
+// orgNamePattern is the form Ramble accepts for an organisation name. Ramble
+// keeps the given case; reserved names and names taken by a user are checked
+// by the server only.
+var orgNamePattern = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$`)
+
+// orgNameValidator checks an organisation name before Ramble does.
+type orgNameValidator struct{}
+
+func (orgNameValidator) Description(context.Context) string {
+	return "name must be 1-64 characters of letters, digits, dot, dash and underscore, starting with a letter or digit"
+}
+
+func (v orgNameValidator) MarkdownDescription(ctx context.Context) string { return v.Description(ctx) }
+
+func (v orgNameValidator) ValidateString(ctx context.Context, req validator.StringRequest, resp *validator.StringResponse) {
+	if req.ConfigValue.IsNull() || req.ConfigValue.IsUnknown() {
+		return
+	}
+	if !orgNamePattern.MatchString(req.ConfigValue.ValueString()) {
+		resp.Diagnostics.AddAttributeError(req.Path, "Invalid organisation name",
+			fmt.Sprintf("%q is not valid: %s.", req.ConfigValue.ValueString(), v.Description(ctx)))
+	}
+}

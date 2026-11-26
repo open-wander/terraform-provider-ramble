@@ -39,7 +39,11 @@ func apiErrorDiag(summary string, status int, body []byte) diag.Diagnostic {
 	default:
 		detail += " " + http.StatusText(status)
 	}
-	if hint := statusHint(status); hint != "" {
+	hint := codeHint(code)
+	if hint == "" {
+		hint = statusHint(status)
+	}
+	if hint != "" {
 		detail += "\n\n" + hint
 	}
 	return diag.NewErrorDiagnostic(summary, detail)
@@ -58,14 +62,34 @@ func decodeAPIError(body []byte) (code, message string) {
 	return e.Error.Code, e.Error.Message
 }
 
+// codeHint returns advice for the error codes Ramble gives for organisations.
+// It takes precedence over the hint for the status.
+func codeHint(code string) string {
+	switch code {
+	case "org_not_empty":
+		return "Delete or move the organisation's packs and jobs first. When they are in this configuration, set " +
+			"ramble_resource.namespace = ramble_organization.<name>.name so that Terraform destroys them before the organisation."
+	case "last_owner":
+		return "An organisation must always keep an owner: make another member owner first, or destroy the organisation itself."
+	case "invalid_role":
+		return "The role must be owner or member."
+	case "invalid_name":
+		return "An organisation name is 1-64 characters of letters, digits, dot, dash and underscore, starting with a letter or digit, " +
+			"and some names are reserved."
+	}
+	return ""
+}
+
 func statusHint(status int) string {
 	switch status {
 	case http.StatusUnauthorized:
 		return "The API token was rejected: it may be invalid, expired or revoked. Check the token attribute of the provider or the " + envToken + " environment variable."
 	case http.StatusForbidden:
-		return "The token needs write scope. A token restricted to one organisation cannot change another namespace, and only the owner may delete an organisation's resource."
+		return "The token needs write scope. A token restricted to one organisation cannot change another namespace, only an owner may change or delete an organisation, " +
+			"and only a member may list its members."
 	case http.StatusConflict:
-		return "The resource or version already exists, or is in a conflicting state. To manage an existing resource, import it with: terraform import ramble_resource.example namespace/name"
+		return "The object already exists or is in a conflicting state. To manage an existing object with Terraform, import it: " +
+			"the documentation of the resource gives the import id."
 	case http.StatusTooManyRequests:
 		return "Ramble is applying a rate limit to this token. Wait a moment and apply again."
 	}

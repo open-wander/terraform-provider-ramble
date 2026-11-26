@@ -6,16 +6,13 @@ It is built on the [Terraform Plugin Framework](https://github.com/hashicorp/ter
 
 ## What it manages
 
-The provider is under construction.
-
-Available:
-
 - `ramble_resource` (resource and data source): a pack or job published to the registry. Import with `terraform import ramble_resource.x namespace/name`.
+- `ramble_organization` (resource and data source): an organisation. Import with `terraform import ramble_organization.x name`. The data source also reports the member count and, to members, the members.
+- `ramble_organization_member` (resource): a user's membership of an organisation, with a role of `owner` or `member`. Import with `terraform import ramble_organization_member.x organization/username`.
 
-Planned:
+A complete example with an organisation, a member and a pack in the organisation is in [`examples/complete`](examples/complete/main.tf). Set `namespace` of a `ramble_resource` to `ramble_organization.x.name`: Ramble refuses to delete an organisation that still holds packs or jobs, and the reference makes Terraform destroy them first.
 
-- `ramble_organization`: an organisation
-- `ramble_organization_member`: a user's membership of an organisation
+The user who owns the token is the first owner of every organisation it creates. An organisation must keep an owner, so managing that user's own membership with `ramble_organization_member` can fail with `last_owner`; see the resource's documentation.
 
 ## Using the provider
 
@@ -79,13 +76,13 @@ To try a local build, use a [development override](https://developer.hashicorp.c
 Acceptance tests run against a real Ramble server built from source. The sibling checkout `../ramble` is used by default; set `RAMBLE_SRC` to use another.
 
 ```shell
-make testacc-env-up           # Postgres in Docker, Ramble from source, a seeded test user and token
-. ./.testacc.env              # exports RAMBLE_ADDR and RAMBLE_TOKEN
+make testacc-env-up           # Postgres in Docker, Ramble from source, two seeded users and a token
+. ./.testacc.env              # exports RAMBLE_ADDR, RAMBLE_TOKEN and RAMBLE_TEST_MEMBER
 make testacc                  # TF_ACC=1 go test ./...
 make testacc-env-down
 ```
 
-The seed is test-only code in `scripts/seed`. It inserts a verified user and a write-scope token straight into the database and writes them to `.testacc.env` (mode 0600, git-ignored). With OpenTofu, also set `TF_ACC_TERRAFORM_PATH` to the `tofu` binary and `TF_ACC_PROVIDER_HOST=registry.opentofu.org`.
+The seed is test-only code in `scripts/seed`. It inserts a verified user with a write-scope token, and a second verified user without a token (`tfacc-member`, used as the member in organisation tests), straight into the database and writes them to `.testacc.env` (mode 0600, git-ignored). With OpenTofu, also set `TF_ACC_TERRAFORM_PATH` to the `tofu` binary and `TF_ACC_PROVIDER_HOST=registry.opentofu.org`.
 
 Ramble limits writes to 120 per minute per token, which matters once resource tests run in parallel.
 

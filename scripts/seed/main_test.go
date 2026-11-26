@@ -39,8 +39,8 @@ func TestHashAndPrefix(t *testing.T) {
 }
 
 func TestEnvFile(t *testing.T) {
-	got := envFile("http://127.0.0.1:3999", "rmbl_x")
-	for _, want := range []string{"export RAMBLE_ADDR='http://127.0.0.1:3999'\n", "export RAMBLE_TOKEN='rmbl_x'\n"} {
+	got := envFile("http://127.0.0.1:3999", "rmbl_x", "tfacc-member")
+	for _, want := range []string{"export RAMBLE_ADDR='http://127.0.0.1:3999'\n", "export RAMBLE_TOKEN='rmbl_x'\n", "export RAMBLE_TEST_MEMBER='tfacc-member'\n"} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("env file %q lacks %q", got, want)
 		}

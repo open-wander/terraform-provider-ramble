@@ -141,11 +141,11 @@ func (p *RambleProvider) Configure(ctx context.Context, req provider.ConfigureRe
 }
 
 func (p *RambleProvider) Resources(_ context.Context) []func() resource.Resource {
-	return []func() resource.Resource{NewResourceResource}
+	return []func() resource.Resource{NewResourceResource, NewOrganizationResource, NewOrganizationMemberResource}
 }
 
 func (p *RambleProvider) DataSources(_ context.Context) []func() datasource.DataSource {
-	return []func() datasource.DataSource{NewResourceDataSource}
+	return []func() datasource.DataSource{NewResourceDataSource, NewOrganizationDataSource}
 }
 
 func New(version string) func() provider.Provider {
