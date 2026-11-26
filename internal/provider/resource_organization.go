@@ -107,7 +107,14 @@ func (r *OrganizationResource) Create(ctx context.Context, req resource.CreateRe
 		return
 	}
 
-	applyOrganization(&plan, *res.JSON201)
+	// Read the organisation back: the create response carries the server's
+	// in-memory timestamp (nanoseconds), while every later read returns the
+	// stored one (microseconds), which would make created_at drift.
+	org := *res.JSON201
+	if got, err := r.client.GetOrgWithResponse(ctx, org.Name); err == nil && got.StatusCode() == http.StatusOK && got.JSON200 != nil {
+		org = *got.JSON200
+	}
+	applyOrganization(&plan, org)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
