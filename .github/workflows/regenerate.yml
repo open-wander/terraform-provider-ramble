@@ -1,0 +1,145 @@
+# Regenerate the API client when Ramble publishes a release.
+#
+# Ramble's release workflow sends a repository_dispatch event "ramble-released"
+# with client_payload.version (vX.Y.Z). This workflow fetches api-docs/openapi.yaml
+# at that tag, regenerates internal/client, and opens a pull request when the
+# generated client changed. No change, no pull request.
+#
+# The spec is always fetched from open-wander/ramble at the validated tag; any
+# URL in the payload is ignored.
+#
+# The pull request is opened with a GitHub App token, not GITHUB_TOKEN: pull
+# requests opened with GITHUB_TOKEN do not trigger the required CI checks.
+#
+# A run started by the App notifies nobody when it fails, so a failure opens
+# an issue instead.
+#
+# Releases arriving close together can cancel a queued run (one pending run
+# per concurrency group); the newer spec covers the older one.
+name: Regenerate client
+
+on:
+  repository_dispatch:
+    types: [ramble-released]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Ramble release tag (vX.Y.Z)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: regenerate-client
+  cancel-in-progress: false
+
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Validate the version
+        id: version
+        env:
+          VERSION: ${{ github.event.client_payload.version || inputs.version }}
+        run: |
+          # Match the whole value: a line-based check would let a multi-line
+          # value through and write extra lines to GITHUB_OUTPUT.
+          if [[ ! "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "version must be vX.Y.Z" >&2
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "branch=regen/ramble-$VERSION" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+
+      - name: Fetch the spec and regenerate
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          curl -fsSL --max-filesize 5000000 -o internal/client/openapi.yaml \
+            "https://raw.githubusercontent.com/open-wander/ramble/${VERSION}/api-docs/openapi.yaml"
+          make check-oapi-version
+          go generate ./internal/client/...
+          go build ./...
+
+      - name: Check for a client change
+        id: diff
+        run: |
+          if git diff --quiet -- internal/client/client.gen.go; then
+            echo "The generated client is unchanged; no pull request."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            git diff --stat -- internal/client
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create an App token
+        if: steps.diff.outputs.changed == 'true'
+        id: app-token
+        uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
+        with:
+          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Commit, push and open the pull request
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
+          VERSION: ${{ steps.version.outputs.version }}
+          BRANCH: ${{ steps.version.outputs.branch }}
+        run: |
+          set -euo pipefail
+          if gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number' | grep -q .; then
+            echo "A pull request for $BRANCH is already open."
+            exit 0
+          fi
+          # The commit must be linked to the bot account (user id, not App
+          # id): the DCO app skips commits by a bot author, and would otherwise
+          # reject this email address as invalid.
+          bot_id="$(gh api "/users/${APP_SLUG}%5Bbot%5D" --jq .id)"
+          [[ "$bot_id" =~ ^[0-9]+$ ]] || { echo "could not look up the bot user id" >&2; exit 1; }
+          name="${APP_SLUG}[bot]"
+          email="${bot_id}+${APP_SLUG}[bot]@users.noreply.github.com"
+          git config user.name "$name"
+          git config user.email "$email"
+          git checkout -b "$BRANCH"
+          git add internal/client/openapi.yaml internal/client/client.gen.go
+          # The DCO check needs a sign-off matching the author.
+          git commit -s -m "chore: regenerate client for ramble ${VERSION}"
+          git push --force "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:refs/heads/${BRANCH}"
+          body="$(printf 'Regenerated internal/client from open-wander/ramble %s api-docs/openapi.yaml.\n\nCI runs the acceptance tests against Ramble %s. Merging this pull request tags the next minor provider release.\n' "$VERSION" "$VERSION")"
+          url="$(gh pr create --base main --head "$BRANCH" \
+            --title "chore: regenerate client for ramble ${VERSION}" \
+            --body "$body")"
+          # An older regeneration merged after this one would cut a needless
+          # release tested against an older Ramble: close the others.
+          gh pr list --state open --json number,headRefName \
+            --jq ".[] | select(.headRefName | startswith(\"regen/ramble-v\")) | select(.headRefName != \"$BRANCH\") | .number" \
+            | while read -r n; do
+                gh pr close "$n" --delete-branch --comment "Superseded by $url."
+              done
+
+      - name: Report a failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh issue create --repo "$GITHUB_REPOSITORY" \
+            --title "Client regeneration failed" \
+            --body "$(printf 'Regenerating the client for a Ramble release failed: %s\n\nThe provider is not following this Ramble release until this is fixed. Re-run with the Regenerate client workflow and the version.\n' "$RUN_URL")"

@@ -88,11 +88,29 @@ Ramble limits writes to 120 per minute per token, which matters once resource te
 
 ### CI
 
-`.github/workflows/test.yml` runs `build` (with golangci-lint), `generate`, `unit` and `acceptance`. The acceptance job builds Ramble from `open-wander/ramble` (input `ramble_ref`, default `main`) and runs the tests for two Terraform minor lines and the latest OpenTofu. These four names are required checks (`.github/rulesets/main.json`).
+`.github/workflows/test.yml` runs `build` (with golangci-lint), `generate`, `unit` and `acceptance`. The acceptance job builds Ramble from `open-wander/ramble` (input `ramble_ref`, default `main`; a client regeneration pull request uses the Ramble release it was generated from) and runs the tests for two Terraform minor lines and the latest OpenTofu. These four names are required checks (`.github/rulesets/main.json`).
 
 ### Releasing
 
-Tags matching `v*` run GoReleaser (`.github/workflows/release.yml`), which signs the checksums and needs the `GPG_PRIVATE_KEY` and `PASSPHRASE` repository secrets.
+Releases follow Ramble releases:
+
+1. Ramble's release workflow sends a `ramble-released` event with the new Ramble version.
+2. `regenerate.yml` fetches that version's `api-docs/openapi.yaml`, regenerates the client and, when `client.gen.go` changed, opens a pull request `chore: regenerate client for ramble vX.Y.Z` on branch `regen/ramble-vX.Y.Z`. It can also be run by hand with a version. CI tests that pull request against the same Ramble release.
+3. Merging it runs `tag-release.yml`, which tags the next minor version (v0.1.0 becomes v0.2.0).
+4. The tag runs `release.yml`: GoReleaser builds, signs the checksums with GPG and publishes the GitHub release, which the Terraform and OpenTofu registries pick up.
+
+The first release, v0.1.0, is tagged by hand. Patch releases for provider-only fixes are also tagged by hand.
+
+Repository settings the workflows need:
+
+| Name | Kind | Used by |
+|------|------|---------|
+| `RELEASE_APP_CLIENT_ID` | variable | `regenerate.yml`, `tag-release.yml` (also in `open-wander/ramble`) |
+| `RELEASE_APP_PRIVATE_KEY` | secret | `regenerate.yml`, `tag-release.yml` (also in `open-wander/ramble`) |
+| `GPG_PRIVATE_KEY` | secret | `release.yml` |
+| `GPG_PASSPHRASE` | secret | `release.yml` |
+
+The GitHub App needs Contents and Pull requests read and write, installed on this repository. Ramble's workflow uses the same App to send the event, with a token limited to this repository. Tags and pull requests created with `GITHUB_TOKEN` do not start other workflows, which is why the App is used.
 
 ## Licence
 

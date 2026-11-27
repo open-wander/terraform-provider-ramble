@@ -123,11 +123,30 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      # A client regeneration pull request (branch regen/ramble-vX.Y.Z) is
+      # tested against that Ramble release; everything else against main or
+      # the ramble_ref input.
+      - name: Choose the Ramble ref
+        id: ramble-ref
+        env:
+          INPUT_REF: ${{ inputs.ramble_ref }}
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          ref="${INPUT_REF:-main}"
+          case "$HEAD_REF" in
+            regen/ramble-v*) ref="${HEAD_REF#regen/ramble-}" ;;
+          esac
+          if [[ ! "$ref" =~ ^[A-Za-z0-9._/-]+$ ]]; then
+            echo "invalid Ramble ref: $ref" >&2
+            exit 1
+          fi
+          echo "Testing against Ramble $ref"
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
       - name: Check out Ramble
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: open-wander/ramble
-          ref: ${{ inputs.ramble_ref || 'main' }}
+          ref: ${{ steps.ramble-ref.outputs.ref }}
           path: ramble
           persist-credentials: false
       - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
