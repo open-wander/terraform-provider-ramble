@@ -48,13 +48,11 @@ Rules the provider enforces:
 
 ## Compatibility
 
-Planned. No release has been made yet.
-
 | Provider | Ramble |
 |----------|--------|
-| v0.1.x | v0.6.x |
+| v0.1.x | v0.6.x and later |
 
-The `/v1` write API this provider uses is not in a Ramble release yet; CI tests against Ramble's `main` branch.
+The provider needs the `/v1` write API, first released in Ramble v0.6.0. CI tests against Ramble's `main` branch, and a client regeneration pull request against the Ramble release it was generated from.
 
 ## Developing the provider
 
