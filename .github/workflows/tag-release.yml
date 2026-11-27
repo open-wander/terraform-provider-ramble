@@ -1,0 +1,89 @@
+# Tag the next minor provider release when a client regeneration pull request
+# (opened by regenerate.yml on branch regen/ramble-vX.Y.Z) is merged. The tag
+# push starts release.yml, which builds and signs the release with GoReleaser.
+#
+# The tag is created with a GitHub App token: a tag pushed with GITHUB_TOKEN
+# would not start release.yml.
+#
+# The first release (v0.1.0) is tagged by hand; until a v* tag exists this
+# workflow refuses to guess one.
+#
+# Only one run waits per concurrency group: if several regeneration pull
+# requests merge while a tag is being created, a middle one gets no tag of its
+# own and ships in the next release.
+name: Tag release
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tag-release
+  cancel-in-progress: false
+
+jobs:
+  tag:
+    if: >-
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.user.type == 'Bot' &&
+      startsWith(github.event.pull_request.head.ref, 'regen/ramble-v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Work out the next minor version
+        id: next
+        env:
+          MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+        run: |
+          set -euo pipefail
+          latest="$(git tag --list 'v*' --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n1 || true)"
+          if [ -z "$latest" ]; then
+            echo "No release tag yet. Tag the first release by hand." >&2
+            exit 1
+          fi
+          if git tag --points-at "$MERGE_SHA" | grep -q '^v'; then
+            echo "$MERGE_SHA is already tagged." >&2
+            exit 1
+          fi
+          IFS=. read -r major minor _ <<<"${latest#v}"
+          next="v${major}.$((minor + 1)).0"
+          echo "latest $latest, next $next"
+          echo "tag=$next" >> "$GITHUB_OUTPUT"
+
+      - name: Create an App token
+        id: app-token
+        uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
+        with:
+          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
+
+      - name: Check the pull request came from the App
+        env:
+          APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: |
+          if [ "$PR_AUTHOR" != "${APP_SLUG}[bot]" ]; then
+            echo "pull request author is not ${APP_SLUG}[bot]; not tagging" >&2
+            exit 1
+          fi
+
+      - name: Create the tag
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          TAG: ${{ steps.next.outputs.tag }}
+          MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+        run: |
+          gh api "repos/${GITHUB_REPOSITORY}/git/refs" \
+            -f ref="refs/tags/${TAG}" -f sha="${MERGE_SHA}" >/dev/null
+          echo "Tagged ${MERGE_SHA} as ${TAG}"

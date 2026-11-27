@@ -12,6 +12,7 @@ on:
 # GitHub considers creating releases and uploading assets as writing contents.
 permissions:
   contents: write
+  issues: write
 
 jobs:
   goreleaser:
@@ -30,7 +31,7 @@ jobs:
         id: import_gpg
         with:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
-          passphrase: ${{ secrets.PASSPHRASE }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@a4f02ab5355a589de60d917a659ce617ed19b3de # v7.3.0
         with:
@@ -39,3 +40,14 @@ jobs:
           # GitHub sets the GITHUB_TOKEN secret automatically.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
+      # A tag created by the App notifies nobody when the release fails.
+      - name: Report a failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh issue create --repo "$GITHUB_REPOSITORY" \
+            --title "Release ${TAG} failed" \
+            --body "$(printf 'The release workflow for %s failed: %s\n\nThe tag exists but no release was published. Fix the cause and re-run the workflow for the same tag.\n' "$TAG" "$RUN_URL")"
