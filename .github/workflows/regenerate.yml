@@ -5,8 +5,13 @@
 # at that tag, regenerates internal/client, and opens a pull request when the
 # generated client changed. No change, no pull request.
 #
-# The spec is always fetched from open-wander/ramble at the validated tag; any
-# URL in the payload is ignored.
+# The spec is always fetched from open-wander/ramble at the commit the validated
+# tag points to, and only when that commit is on ramble main; any URL in the
+# payload is ignored.
+#
+# Never update a regeneration pull request by hand (including "Update branch"):
+# tag-release.yml only tags a single commit made by the App. Re-run this
+# workflow instead.
 #
 # The pull request is opened with a GitHub App token, not GITHUB_TOKEN: pull
 # requests opened with GITHUB_TOKEN do not trigger the required CI checks.
@@ -38,6 +43,9 @@ concurrency:
 
 jobs:
   regenerate:
+    # The App key is a secret of the `automation` environment (deployment
+    # branch policy `main`, no reviewers, so regeneration stays automatic).
+    environment: automation
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -64,12 +72,31 @@ jobs:
           go-version-file: 'go.mod'
           cache: true
 
-      - name: Fetch the spec and regenerate
+      # Anyone with write access to ramble can push a v* tag on a commit that
+      # never reached main. Only a tag whose commit is on ramble main is
+      # used, and the spec is fetched by that commit, not by the tag name.
+      - name: Resolve the tag to a commit on ramble main
+        id: ramble
         env:
+          GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.version.outputs.version }}
         run: |
+          set -euo pipefail
+          sha="$(gh api "repos/open-wander/ramble/commits/refs/tags/${VERSION}" --jq .sha)"
+          [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || { echo "could not resolve ${VERSION}" >&2; exit 1; }
+          status="$(gh api "repos/open-wander/ramble/compare/${sha}...main" --jq .status)"
+          if [ "$status" != "ahead" ] && [ "$status" != "identical" ]; then
+            echo "${VERSION} (${sha}) is not on ramble main (compare status: ${status})" >&2
+            exit 1
+          fi
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+      - name: Fetch the spec and regenerate
+        env:
+          SHA: ${{ steps.ramble.outputs.sha }}
+        run: |
           curl -fsSL --max-filesize 5000000 -o internal/client/openapi.yaml \
-            "https://raw.githubusercontent.com/open-wander/ramble/${VERSION}/api-docs/openapi.yaml"
+            "https://raw.githubusercontent.com/open-wander/ramble/${SHA}/api-docs/openapi.yaml"
           make check-oapi-version
           go generate ./internal/client/...
           go build ./...

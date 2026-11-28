@@ -14,8 +14,12 @@ permissions:
   contents: write
   issues: write
 
+# The GPG key is a secret of the `release` environment, which needs required
+# reviewers and a deployment tag policy of `v*`. Keep it out of repository
+# secrets: those are readable from any branch a write collaborator pushes.
 jobs:
   goreleaser:
+    environment: release
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
